@@ -22,10 +22,6 @@ FROM alpine:3.19
 # Install docker CLI for compose operations
 RUN apk add --no-cache ca-certificates docker-cli docker-cli-compose
 
-# Create non-root user
-RUN addgroup -g 1000 gosei && \
-    adduser -u 1000 -G gosei -s /bin/sh -D gosei
-
 WORKDIR /app
 
 # Copy binary from builder
@@ -42,8 +38,5 @@ EXPOSE 8080
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget -q --spider http://localhost:8080/api/system/health || exit 1
-
-# Run as non-root user
-USER gosei
 
 ENTRYPOINT ["/app/gosei"]
