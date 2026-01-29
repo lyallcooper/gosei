@@ -135,6 +135,12 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("X-Accel-Buffering", "no")
 
+	// Disable write deadline for SSE connections (they are long-lived)
+	rc := http.NewResponseController(w)
+	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+		log.Printf("Warning: could not disable write deadline: %v", err)
+	}
+
 	// Create flusher
 	flusher, ok := w.(http.Flusher)
 	if !ok {

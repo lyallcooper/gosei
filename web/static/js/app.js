@@ -39,6 +39,43 @@
     };
 
     // ============================================
+    // Compose Operations Loading State
+    // ============================================
+    const ComposeOps = {
+        activeOperations: new Map(),
+
+        startOperation(projectId, button) {
+            this.activeOperations.set(projectId, button);
+            button.classList.add('loading');
+
+            // Disable other compose buttons for this project
+            const actionBar = button.closest('.project-actions, .project-card-actions');
+            if (actionBar) {
+                actionBar.querySelectorAll('.btn').forEach(btn => {
+                    if (btn !== button) btn.disabled = true;
+                });
+            }
+        },
+
+        endOperation(projectId) {
+            const button = this.activeOperations.get(projectId);
+            if (button) {
+                button.classList.remove('loading');
+
+                // Re-enable other compose buttons
+                const actionBar = button.closest('.project-actions, .project-card-actions');
+                if (actionBar) {
+                    actionBar.querySelectorAll('.btn').forEach(btn => {
+                        btn.disabled = false;
+                    });
+                }
+
+                this.activeOperations.delete(projectId);
+            }
+        }
+    };
+
+    // ============================================
     // SSE Event Handling
     // ============================================
     const SSE = {
@@ -179,6 +216,8 @@
         },
 
         handleComposeComplete(data) {
+            ComposeOps.endOperation(data.projectId);
+
             if (data.success) {
                 Toast.success(`${data.operation} completed successfully`);
             } else {
@@ -311,6 +350,28 @@
             // Ignore parse errors
         }
         Toast.error(message);
+    });
+
+    // Handle compose operation button clicks
+    document.body.addEventListener('htmx:beforeRequest', function(event) {
+        const button = event.target;
+        const url = event.detail.pathInfo?.requestPath || '';
+
+        // Check if this is a compose operation
+        const match = url.match(/\/api\/projects\/([^/]+)\/(up|down|restart|pull|update)$/);
+        if (match) {
+            const projectId = match[1];
+            ComposeOps.startOperation(projectId, button);
+        }
+    });
+
+    // Handle request errors for compose operations
+    document.body.addEventListener('htmx:sendError', function(event) {
+        const url = event.detail.pathInfo?.requestPath || '';
+        const match = url.match(/\/api\/projects\/([^/]+)\/(up|down|restart|pull|update)$/);
+        if (match) {
+            ComposeOps.endOperation(match[1]);
+        }
     });
 
     // ============================================
