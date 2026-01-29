@@ -56,26 +56,26 @@ func templateFuncs() template.FuncMap {
 			switch status {
 			case "running":
 				return "●"
-			case "partial":
+			case "partial", "restarting":
 				return "◐"
-			case "stopped":
+			case "stopped", "exited", "dead", "created":
 				return "○"
 			default:
-				return "?"
+				return "○"
 			}
 		},
 		"stateClass": func(state string) string {
 			switch state {
 			case "running":
 				return "state-running"
-			case "exited":
+			case "exited", "dead", "stopped":
 				return "state-exited"
 			case "paused":
 				return "state-paused"
-			case "restarting":
+			case "restarting", "created":
 				return "state-restarting"
 			default:
-				return "state-unknown"
+				return "state-exited"
 			}
 		},
 		"formatBytes": func(bytes uint64) string {
@@ -104,6 +104,7 @@ type PageData struct {
 	Project    *project.Project
 	Container  *docker.ContainerInfo
 	Containers []docker.ContainerInfo
+	ShowLogs   bool
 }
 
 func (h *PageHandler) updateProjectStatuses(ctx context.Context, projects []*project.Project) {
@@ -197,6 +198,7 @@ func (h *PageHandler) ContainerLogs(w http.ResponseWriter, r *http.Request) {
 		Title:     container.Name + " Logs",
 		Version:   h.version,
 		Container: container,
+		ShowLogs:  true,
 	}
 
 	h.render(w, "base.html", data)
@@ -227,6 +229,37 @@ func (h *PageHandler) ProjectDetailPartial(w http.ResponseWriter, r *http.Reques
 	}
 
 	h.renderPartial(w, "partials/project-detail.html", data)
+}
+
+// ProjectContainersPartial renders just the containers section for a project
+func (h *PageHandler) ProjectContainersPartial(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	p, ok := h.scanner.GetProject(id)
+	if !ok {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+
+	containers, _ := h.docker.ListContainers(r.Context(), p.Name)
+
+	h.renderPartial(w, "partials/containers-section.html", PageData{
+		Project:    p,
+		Containers: containers,
+	})
+}
+
+// ContainerActionsPartial renders just the container actions
+func (h *PageHandler) ContainerActionsPartial(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	container, err := h.docker.GetContainer(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Container not found", http.StatusNotFound)
+		return
+	}
+
+	h.renderPartial(w, "partials/container-actions.html", PageData{Container: container})
 }
 
 // ContainerLogsContent renders just the logs content

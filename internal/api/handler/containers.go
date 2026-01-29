@@ -147,6 +147,10 @@ func (h *ContainerHandler) streamLogs(w http.ResponseWriter, r *http.Request, id
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
 
+	// Disable write deadline for SSE connections
+	rc := http.NewResponseController(w)
+	rc.SetWriteDeadline(time.Time{})
+
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		writeError(w, http.StatusInternalServerError, "SSE not supported")

@@ -39,6 +39,20 @@
     };
 
     // ============================================
+    // Debounce Helper
+    // ============================================
+    const debounceTimers = {};
+    function debounce(key, fn, delay = 300) {
+        if (debounceTimers[key]) {
+            clearTimeout(debounceTimers[key]);
+        }
+        debounceTimers[key] = setTimeout(() => {
+            delete debounceTimers[key];
+            fn();
+        }, delay);
+    }
+
+    // ============================================
     // Compose Operations Loading State
     // ============================================
     const ComposeOps = {
@@ -162,27 +176,77 @@
         },
 
         handleContainerStatus(data) {
-            // Update container row in tables
-            const rows = document.querySelectorAll(`[data-container-id="${data.id}"]`);
-            rows.forEach(row => {
-                const statusBadge = row.querySelector('.state-badge');
-                if (statusBadge) {
-                    statusBadge.className = `state-badge state-${data.state}`;
-                    statusBadge.innerHTML = `${this.getStatusIcon(data.state)} ${data.state}`;
-                }
-            });
+            console.log('Container status event:', data);
 
-            // Refresh the project list if on dashboard
+            // Refresh the project list if on dashboard (debounced)
             if (document.querySelector('.projects-grid')) {
-                htmx.ajax('GET', '/partials/projects', {
-                    target: '#projects-container',
-                    swap: 'innerHTML'
-                });
+                debounce('dashboard-refresh', () => {
+                    const target = document.getElementById('projects-container');
+                    if (target) {
+                        fetch('/partials/projects')
+                            .then(r => r.text())
+                            .then(html => {
+                                target.innerHTML = html;
+                                htmx.process(target);
+                            });
+                    }
+                }, 500);
+            }
+
+            // Refresh project detail page containers section (debounced)
+            const projectPage = document.querySelector('.project-page');
+            if (projectPage) {
+                const projectId = projectPage.dataset.projectId;
+                debounce('project-containers-refresh', () => {
+                    const section = document.getElementById('containers-section');
+                    if (section) {
+                        console.log('Refreshing containers for project:', projectId);
+                        fetch(`/partials/projects/${projectId}/containers`)
+                            .then(r => r.text())
+                            .then(html => {
+                                section.outerHTML = html;
+                                const newSection = document.getElementById('containers-section');
+                                if (newSection) htmx.process(newSection);
+                            })
+                            .catch(err => console.error('Failed to refresh containers:', err));
+                    }
+                }, 500);
+            }
+
+            // Refresh container detail page (debounced)
+            const containerPage = document.querySelector('.container-page');
+            if (containerPage) {
+                const containerName = containerPage.dataset.containerId;
+                // Match by name or ID
+                if (containerName === data.name || containerName === data.id ||
+                    data.id.startsWith(containerName) || containerName.startsWith(data.id)) {
+
+                    debounce('container-detail-refresh', () => {
+                        // Update status badge in header
+                        const statusBadge = containerPage.querySelector('.page-meta .state-badge');
+                        if (statusBadge) {
+                            statusBadge.className = `state-badge state-${data.state}`;
+                            statusBadge.innerHTML = `${this.getStatusIcon(data.state)} ${data.state}`;
+                        }
+                        // Refresh action buttons
+                        const actions = document.getElementById('container-actions');
+                        if (actions) {
+                            fetch(`/partials/containers/${containerName}/actions`)
+                                .then(r => r.text())
+                                .then(html => {
+                                    actions.outerHTML = html;
+                                    const newActions = document.getElementById('container-actions');
+                                    if (newActions) htmx.process(newActions);
+                                });
+                        }
+                    }, 500);
+                }
             }
         },
 
         handleProjectStatus(data) {
-            const card = document.querySelector(`[data-project-id="${data.id}"]`);
+            // Update project card on dashboard
+            const card = document.querySelector(`.project-card[data-project-id="${data.id}"]`);
             if (card) {
                 const statusBadge = card.querySelector('.status-badge');
                 if (statusBadge) {
@@ -193,6 +257,21 @@
                 const infoValue = card.querySelector('.info-value');
                 if (infoValue) {
                     infoValue.textContent = `${data.running}/${data.total}`;
+                }
+            }
+
+            // Update project detail page
+            const projectPage = document.querySelector(`.project-page[data-project-id="${data.id}"]`);
+            if (projectPage) {
+                const statusBadge = projectPage.querySelector('.page-meta .status-badge');
+                if (statusBadge) {
+                    statusBadge.className = `status-badge status-${data.status}`;
+                    statusBadge.innerHTML = `${this.getStatusIcon(data.status)} ${data.status}`;
+                }
+
+                const servicesCount = projectPage.querySelector('.project-services');
+                if (servicesCount) {
+                    servicesCount.textContent = `${data.running}/${data.total} services`;
                 }
             }
         },

@@ -79,6 +79,8 @@ func NewRouter(cfg *Config) http.Handler {
 	r.Route("/partials", func(r chi.Router) {
 		r.Get("/projects", pageHandler.ProjectsPartial)
 		r.Get("/projects/{id}", pageHandler.ProjectDetailPartial)
+		r.Get("/projects/{id}/containers", pageHandler.ProjectContainersPartial)
+		r.Get("/containers/{id}/actions", pageHandler.ContainerActionsPartial)
 		r.Get("/containers/{id}/logs-content", pageHandler.ContainerLogsContent)
 	})
 

@@ -1,0 +1,98 @@
+{{define "pages/logs.html"}}
+<div class="logs-page">
+    <div class="page-header">
+        <div class="page-breadcrumb">
+            <a href="/" class="breadcrumb-link">Projects</a>
+            {{if .Container.ProjectName}}
+            <span class="breadcrumb-sep">/</span>
+            <a href="/projects/{{.Container.ProjectName}}" class="breadcrumb-link">{{.Container.ProjectName}}</a>
+            {{end}}
+            <span class="breadcrumb-sep">/</span>
+            <a href="/containers/{{.Container.ID}}" class="breadcrumb-link">{{.Container.Name}}</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current">Logs</span>
+        </div>
+        <h1 class="page-title">{{.Container.Name}} Logs</h1>
+        <div class="page-meta">
+            <span class="state-badge {{stateClass .Container.State}}">
+                {{statusIcon .Container.State}} {{.Container.State}}
+            </span>
+        </div>
+    </div>
+
+    <div class="logs-actions">
+        <a href="/containers/{{.Container.Name}}" class="btn">Back to Container</a>
+        <button class="btn" id="scroll-bottom">Scroll to Bottom</button>
+        <button class="btn" id="clear-logs">Clear</button>
+    </div>
+
+    <div class="logs-section">
+        <div class="logs-content"
+             id="logs-container"
+             hx-get="/partials/containers/{{.Container.Name}}/logs-content"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="logs-empty">Loading logs...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const logsContainer = document.getElementById('logs-container');
+    const containerId = '{{.Container.Name}}';
+
+    // Connect to SSE for live log updates
+    const evtSource = new EventSource('/api/containers/' + containerId + '/logs?follow=true&tail=100');
+
+    evtSource.addEventListener('log', function(e) {
+        const data = JSON.parse(e.data);
+        const line = document.createElement('div');
+        line.className = 'log-line';
+
+        const timestamp = new Date(data.timestamp);
+        const timeStr = timestamp.toTimeString().split(' ')[0];
+
+        line.innerHTML = '<span class="log-timestamp">' + timeStr + '</span>' +
+                        '<span class="log-message">' + escapeHtml(data.line) + '</span>';
+
+        // Remove "Loading" or "No logs" message
+        const empty = logsContainer.querySelector('.logs-empty');
+        if (empty) empty.remove();
+
+        logsContainer.appendChild(line);
+        logsContainer.scrollTop = logsContainer.scrollHeight;
+
+        // Limit lines
+        while (logsContainer.children.length > 1000) {
+            logsContainer.removeChild(logsContainer.firstChild);
+        }
+    });
+
+    evtSource.onerror = function() {
+        console.log('Log stream disconnected');
+    };
+
+    // Clean up on page leave
+    window.addEventListener('beforeunload', function() {
+        evtSource.close();
+    });
+
+    // Scroll to bottom button
+    document.getElementById('scroll-bottom').addEventListener('click', function() {
+        logsContainer.scrollTop = logsContainer.scrollHeight;
+    });
+
+    // Clear logs button
+    document.getElementById('clear-logs').addEventListener('click', function() {
+        logsContainer.innerHTML = '<div class="logs-empty">Logs cleared</div>';
+    });
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+})();
+</script>
+{{end}}

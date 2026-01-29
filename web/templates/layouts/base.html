@@ -37,6 +37,8 @@
                 {{template "pages/dashboard.html" .}}
             {{else if .Project}}
                 {{template "pages/project.html" .}}
+            {{else if and .Container .ShowLogs}}
+                {{template "pages/logs.html" .}}
             {{else if .Container}}
                 {{template "pages/container.html" .}}
             {{else}}
@@ -61,6 +63,23 @@
 
     <!-- Toast container for notifications -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- Output modal for compose operations -->
+    <div id="output-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop" onclick="closeOutputModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Command Output</h3>
+                <button class="modal-close" onclick="closeOutputModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="output-log" class="output-log"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeOutputModal()">Close</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/static/js/app.js"></script>
 </body>

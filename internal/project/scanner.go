@@ -2,7 +2,6 @@ package project
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -286,10 +285,9 @@ func findComposeFile(dir string) string {
 	return ""
 }
 
-// generateProjectID generates a stable ID from the project path
+// generateProjectID generates an ID from the project directory name
 func generateProjectID(path string) string {
-	hash := sha256.Sum256([]byte(path))
-	return fmt.Sprintf("%x", hash[:8])
+	return filepath.Base(path)
 }
 
 // parseEnvironment parses the environment field which can be a list or map

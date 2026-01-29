@@ -1,0 +1,29 @@
+{{define "partials/container-actions.html"}}
+<div class="container-actions" id="container-actions" data-state="{{.Container.State}}">
+    {{if eq .Container.State "running"}}
+    <button
+        class="btn btn-danger"
+        hx-post="/api/containers/{{.Container.Name}}/stop"
+        hx-swap="none"
+    >
+        STOP
+    </button>
+    <button
+        class="btn"
+        hx-post="/api/containers/{{.Container.Name}}/restart"
+        hx-swap="none"
+    >
+        RESTART
+    </button>
+    {{else}}
+    <button
+        class="btn btn-primary"
+        hx-post="/api/containers/{{.Container.Name}}/start"
+        hx-swap="none"
+    >
+        START
+    </button>
+    {{end}}
+    <a href="/containers/{{.Container.Name}}/logs" class="btn">LOGS</a>
+</div>
+{{end}}

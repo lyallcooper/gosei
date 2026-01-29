@@ -674,6 +674,18 @@ code {
     padding: var(--space-lg);
 }
 
+/* Logs Page */
+.logs-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.logs-section .logs-content {
+    max-height: calc(100vh - 300px);
+    min-height: 400px;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
