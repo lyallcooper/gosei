@@ -1,0 +1,154 @@
+{{define "pages/project.html"}}
+<div class="project-page">
+    <div class="page-header">
+        <div class="page-breadcrumb">
+            <a href="/" class="breadcrumb-link">Projects</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current">{{.Project.Name}}</span>
+        </div>
+        <h1 class="page-title">{{.Project.Name}}</h1>
+        <div class="page-meta">
+            <span class="status-badge {{statusClass .Project.Status}}">
+                {{statusIcon .Project.Status}} {{.Project.Status}}
+            </span>
+            <span class="meta-item">{{.Project.Running}}/{{.Project.Total}} services</span>
+            <span class="meta-item path">{{.Project.Path}}</span>
+        </div>
+    </div>
+
+    <div class="project-actions">
+        <button
+            class="btn btn-primary"
+            hx-post="/api/projects/{{.Project.ID}}/up"
+            hx-swap="none"
+        >
+            UP
+        </button>
+        <button
+            class="btn btn-danger"
+            hx-post="/api/projects/{{.Project.ID}}/down"
+            hx-swap="none"
+        >
+            DOWN
+        </button>
+        <button
+            class="btn"
+            hx-post="/api/projects/{{.Project.ID}}/restart"
+            hx-swap="none"
+        >
+            RESTART
+        </button>
+        <button
+            class="btn"
+            hx-post="/api/projects/{{.Project.ID}}/pull"
+            hx-swap="none"
+        >
+            PULL
+        </button>
+    </div>
+
+    <div class="containers-section">
+        <h2 class="section-title">Containers</h2>
+        <div class="containers-table">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>SERVICE</th>
+                        <th>STATUS</th>
+                        <th>CPU/MEM</th>
+                        <th>IMAGE</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody id="containers-list">
+                    {{range .Containers}}
+                    <tr class="container-row" data-container-id="{{.ID}}">
+                        <td class="container-name">
+                            <a href="/containers/{{.ID}}">{{.ServiceName}}</a>
+                        </td>
+                        <td class="container-status">
+                            <span class="state-badge {{stateClass .State}}">
+                                {{statusIcon .State}} {{.State}}
+                            </span>
+                            {{if .Health}}
+                            <span class="health-badge health-{{.Health}}">{{.Health}}</span>
+                            {{end}}
+                        </td>
+                        <td class="container-stats" data-stats-id="{{.ID}}">
+                            <span class="stat-loading">--</span>
+                        </td>
+                        <td class="container-image">
+                            {{.Image}}
+                        </td>
+                        <td class="container-actions">
+                            {{if eq .State "running"}}
+                            <button
+                                class="btn btn-sm"
+                                hx-post="/api/containers/{{.ID}}/stop"
+                                hx-swap="none"
+                            >Stop</button>
+                            <button
+                                class="btn btn-sm"
+                                hx-post="/api/containers/{{.ID}}/restart"
+                                hx-swap="none"
+                            >Restart</button>
+                            {{else}}
+                            <button
+                                class="btn btn-sm btn-primary"
+                                hx-post="/api/containers/{{.ID}}/start"
+                                hx-swap="none"
+                            >Start</button>
+                            {{end}}
+                            <a href="/containers/{{.ID}}/logs" class="btn btn-sm">Logs</a>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="5" class="empty-row">No containers found</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="services-section">
+        <h2 class="section-title">Services (from compose file)</h2>
+        <div class="services-grid">
+            {{range .Project.Services}}
+            <div class="service-card">
+                <div class="service-header">
+                    <h3 class="service-name">{{.Name}}</h3>
+                </div>
+                <div class="service-details">
+                    {{if .Image}}
+                    <div class="service-detail">
+                        <span class="detail-label">Image:</span>
+                        <span class="detail-value">{{.Image}}</span>
+                    </div>
+                    {{end}}
+                    {{if .Build}}
+                    <div class="service-detail">
+                        <span class="detail-label">Build:</span>
+                        <span class="detail-value">{{.Build.Context}}</span>
+                    </div>
+                    {{end}}
+                    {{if .Ports}}
+                    <div class="service-detail">
+                        <span class="detail-label">Ports:</span>
+                        <span class="detail-value">{{range $i, $p := .Ports}}{{if $i}}, {{end}}{{$p}}{{end}}</span>
+                    </div>
+                    {{end}}
+                    {{if .DependsOn}}
+                    <div class="service-detail">
+                        <span class="detail-label">Depends on:</span>
+                        <span class="detail-value">{{range $i, $d := .DependsOn}}{{if $i}}, {{end}}{{$d}}{{end}}</span>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{end}}

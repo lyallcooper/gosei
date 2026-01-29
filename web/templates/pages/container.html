@@ -1,0 +1,134 @@
+{{define "pages/container.html"}}
+<div class="container-page">
+    <div class="page-header">
+        <div class="page-breadcrumb">
+            <a href="/" class="breadcrumb-link">Projects</a>
+            {{if .Container.ProjectName}}
+            <span class="breadcrumb-sep">/</span>
+            <a href="/projects/{{.Container.ProjectName}}" class="breadcrumb-link">{{.Container.ProjectName}}</a>
+            {{end}}
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current">{{.Container.Name}}</span>
+        </div>
+        <h1 class="page-title">{{.Container.Name}}</h1>
+        <div class="page-meta">
+            <span class="state-badge {{stateClass .Container.State}}">
+                {{statusIcon .Container.State}} {{.Container.State}}
+            </span>
+            {{if .Container.Health}}
+            <span class="health-badge health-{{.Container.Health}}">{{.Container.Health}}</span>
+            {{end}}
+        </div>
+    </div>
+
+    <div class="container-actions">
+        {{if eq .Container.State "running"}}
+        <button
+            class="btn btn-danger"
+            hx-post="/api/containers/{{.Container.ID}}/stop"
+            hx-swap="none"
+        >
+            STOP
+        </button>
+        <button
+            class="btn"
+            hx-post="/api/containers/{{.Container.ID}}/restart"
+            hx-swap="none"
+        >
+            RESTART
+        </button>
+        {{else}}
+        <button
+            class="btn btn-primary"
+            hx-post="/api/containers/{{.Container.ID}}/start"
+            hx-swap="none"
+        >
+            START
+        </button>
+        {{end}}
+        <a href="/containers/{{.Container.ID}}/logs" class="btn">LOGS</a>
+    </div>
+
+    <div class="container-details">
+        <div class="detail-section">
+            <h2 class="section-title">Details</h2>
+            <dl class="detail-list">
+                <dt>Container ID</dt>
+                <dd><code>{{.Container.ID}}</code></dd>
+
+                <dt>Image</dt>
+                <dd><code>{{.Container.Image}}</code></dd>
+
+                <dt>Image ID</dt>
+                <dd><code>{{.Container.ImageID}}</code></dd>
+
+                <dt>Status</dt>
+                <dd>{{.Container.Status}}</dd>
+
+                <dt>Created</dt>
+                <dd>{{.Container.Created}}</dd>
+
+                {{if .Container.ServiceName}}
+                <dt>Service</dt>
+                <dd>{{.Container.ServiceName}}</dd>
+                {{end}}
+
+                {{if .Container.ProjectName}}
+                <dt>Project</dt>
+                <dd>{{.Container.ProjectName}}</dd>
+                {{end}}
+            </dl>
+        </div>
+
+        {{if .Container.Ports}}
+        <div class="detail-section">
+            <h2 class="section-title">Ports</h2>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Host</th>
+                        <th>Container</th>
+                        <th>Protocol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Container.Ports}}
+                    <tr>
+                        <td>{{if .HostIP}}{{.HostIP}}:{{end}}{{.HostPort}}</td>
+                        <td>{{.ContainerPort}}</td>
+                        <td>{{.Protocol}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{end}}
+
+        <div class="detail-section">
+            <h2 class="section-title">Resource Usage</h2>
+            <div class="stats-display" data-container-id="{{.Container.ID}}" hx-get="/api/containers/{{.Container.ID}}/stats" hx-trigger="load, every 5s" hx-swap="innerHTML">
+                <div class="stat-item">
+                    <span class="stat-label">CPU</span>
+                    <span class="stat-value">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Memory</span>
+                    <span class="stat-value">--</span>
+                </div>
+            </div>
+        </div>
+
+        {{if .Container.Labels}}
+        <div class="detail-section">
+            <h2 class="section-title">Labels</h2>
+            <dl class="label-list">
+                {{range $key, $value := .Container.Labels}}
+                <dt><code>{{$key}}</code></dt>
+                <dd>{{$value}}</dd>
+                {{end}}
+            </dl>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}

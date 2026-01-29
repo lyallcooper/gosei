@@ -1,0 +1,60 @@
+{{define "partials/project-list.html"}}
+{{range .Projects}}
+<div class="project-card" data-project-id="{{.ID}}" hx-ext="sse" sse-connect="/api/events">
+    <div class="project-card-header">
+        <a href="/projects/{{.ID}}" class="project-name">{{.Name}}</a>
+        <span class="status-badge {{statusClass .Status}}">
+            {{statusIcon .Status}} {{.Status}}
+        </span>
+    </div>
+    <div class="project-card-body">
+        <div class="project-info">
+            <span class="info-item">
+                <span class="info-label">Services:</span>
+                <span class="info-value">{{.Running}}/{{.Total}}</span>
+            </span>
+        </div>
+        <div class="project-path">
+            <code>{{.Path}}</code>
+        </div>
+    </div>
+    <div class="project-card-actions">
+        <button
+            class="btn btn-sm btn-primary"
+            hx-post="/api/projects/{{.ID}}/up"
+            hx-swap="none"
+            hx-indicator="#project-{{.ID}}-indicator"
+        >
+            UP
+        </button>
+        <button
+            class="btn btn-sm btn-danger"
+            hx-post="/api/projects/{{.ID}}/down"
+            hx-swap="none"
+            hx-indicator="#project-{{.ID}}-indicator"
+        >
+            DOWN
+        </button>
+        <button
+            class="btn btn-sm"
+            hx-post="/api/projects/{{.ID}}/restart"
+            hx-swap="none"
+            hx-indicator="#project-{{.ID}}-indicator"
+        >
+            RESTART
+        </button>
+        <a href="/projects/{{.ID}}" class="btn btn-sm">Details</a>
+        <span id="project-{{.ID}}-indicator" class="htmx-indicator">
+            <span class="spinner"></span>
+        </span>
+    </div>
+</div>
+{{else}}
+<div class="empty-state">
+    <div class="empty-state-icon">□</div>
+    <h2>No Projects Found</h2>
+    <p>No Docker Compose projects found in the configured directory.</p>
+    <p>Make sure your projects have a <code>compose.yaml</code> or <code>docker-compose.yml</code> file.</p>
+</div>
+{{end}}
+{{end}}

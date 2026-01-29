@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - Gosei</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/sse.js"></script>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-brand">
+                <a href="/" class="logo">
+                    <span class="logo-text">GOSEI</span>
+                    <span class="logo-version">v{{.Version}}</span>
+                </a>
+            </div>
+            <nav class="header-nav">
+                <a href="/" class="nav-link {{if eq .Title "Dashboard"}}active{{end}}">Dashboard</a>
+            </nav>
+            <div class="header-actions">
+                <button
+                    class="btn btn-sm"
+                    hx-post="/api/projects/refresh"
+                    hx-target="#projects-container"
+                    hx-swap="innerHTML"
+                >
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <main class="main">
+            {{if .Projects}}
+                {{template "pages/dashboard.html" .}}
+            {{else if .Project}}
+                {{template "pages/project.html" .}}
+            {{else if .Container}}
+                {{template "pages/container.html" .}}
+            {{else}}
+                <div class="empty-state">
+                    <div class="empty-state-icon">□</div>
+                    <h2>No Projects Found</h2>
+                    <p>Configure the projects directory to get started.</p>
+                </div>
+            {{end}}
+        </main>
+
+        <footer class="footer">
+            <div class="footer-status" hx-ext="sse" sse-connect="/api/events">
+                <span class="status-dot connected"></span>
+                <span class="status-text">Connected</span>
+            </div>
+            <div class="footer-info">
+                御制 Gosei - Docker Compose Manager
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast container for notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

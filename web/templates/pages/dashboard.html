@@ -1,0 +1,31 @@
+{{define "pages/dashboard.html"}}
+<div class="dashboard">
+    <div class="page-header">
+        <h1 class="page-title">Projects</h1>
+        <div class="page-actions">
+            <span class="project-count">{{len .Projects}} project{{if ne (len .Projects) 1}}s{{end}}</span>
+        </div>
+    </div>
+
+    <div id="projects-container" class="projects-grid">
+        {{template "partials/project-list.html" .}}
+    </div>
+</div>
+
+<!-- Output modal for compose operations -->
+<div id="output-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeOutputModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Operation Output</h3>
+            <button class="modal-close" onclick="closeOutputModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <pre class="output-log" id="output-log"></pre>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeOutputModal()">Close</button>
+        </div>
+    </div>
+</div>
+{{end}}

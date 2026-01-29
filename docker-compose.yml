@@ -1,0 +1,27 @@
+services:
+  gosei:
+    build: .
+    container_name: gosei
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Docker socket for container management
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Projects directory - mount your compose projects here
+      - ${GOSEI_PROJECTS_DIR:-./projects}:/projects:ro
+    environment:
+      - GOSEI_HOST=0.0.0.0
+      - GOSEI_PORT=8080
+      - GOSEI_PROJECTS_DIR=/projects
+      # Optional: Basic auth
+      # - GOSEI_AUTH_USER=admin
+      # - GOSEI_AUTH_PASS=secret
+    labels:
+      - "com.docker.compose.project=gosei"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s

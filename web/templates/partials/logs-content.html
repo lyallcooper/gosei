@@ -1,0 +1,12 @@
+{{define "partials/logs-content.html"}}
+<div class="logs-content">
+    {{range .Lines}}
+    <div class="log-line">
+        <span class="log-timestamp">{{.Timestamp.Format "15:04:05"}}</span>
+        <span class="log-message">{{.Message}}</span>
+    </div>
+    {{else}}
+    <div class="logs-empty">No logs available</div>
+    {{end}}
+</div>
+{{end}}

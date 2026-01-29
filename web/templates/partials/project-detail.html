@@ -1,0 +1,20 @@
+{{define "partials/project-detail.html"}}
+<div class="project-detail-partial">
+    <div class="project-status">
+        <span class="status-badge {{statusClass .Project.Status}}">
+            {{statusIcon .Project.Status}} {{.Project.Status}}
+        </span>
+        <span class="services-count">{{.Project.Running}}/{{.Project.Total}} services</span>
+    </div>
+
+    <div class="containers-list">
+        {{range .Containers}}
+        <div class="container-item" data-container-id="{{.ID}}">
+            <span class="container-name">{{.ServiceName}}</span>
+            <span class="container-state {{stateClass .State}}">{{statusIcon .State}} {{.State}}</span>
+            <span class="container-image">{{.Image}}</span>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}
