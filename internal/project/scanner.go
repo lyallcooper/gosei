@@ -70,39 +70,39 @@ func (s *Scanner) Scan(ctx context.Context) ([]*Project, error) {
 	// Clear existing projects
 	s.projects = make(map[string]*Project)
 
-	// Walk the directory looking for compose files
-	err := filepath.WalkDir(s.baseDir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return nil // Skip directories we can't read
-		}
-
-		// Skip hidden directories
-		if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
-			return filepath.SkipDir
-		}
-
-		// Check for compose files
-		if !d.IsDir() && isComposeFile(d.Name()) {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
-
-			project, err := s.parseProject(path)
-			if err != nil {
-				// Log error but continue scanning
-				return nil
-			}
-
-			s.projects[project.ID] = project
-		}
-
-		return nil
-	})
-
+	// Read immediate subdirectories only (no recursive walk)
+	entries, err := os.ReadDir(s.baseDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan directory: %w", err)
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		// Skip non-directories and hidden directories
+		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+
+		projectDir := filepath.Join(s.baseDir, entry.Name())
+
+		// Check for compose file in this directory
+		composeFile := findComposeFile(projectDir)
+		if composeFile == "" {
+			continue
+		}
+
+		project, err := s.parseProject(composeFile)
+		if err != nil {
+			// Log error but continue scanning
+			continue
+		}
+
+		s.projects[project.ID] = project
 	}
 
 	// Convert map to slice and sort by name
@@ -267,21 +267,23 @@ type composeService struct {
 	Restart     string      `yaml:"restart"`
 }
 
-// isComposeFile checks if a filename is a compose file
-func isComposeFile(name string) bool {
-	composeNames := []string{
-		"compose.yaml",
-		"compose.yml",
-		"docker-compose.yaml",
-		"docker-compose.yml",
-	}
+// composeFileNames lists valid compose file names in priority order
+var composeFileNames = []string{
+	"compose.yaml",
+	"compose.yml",
+	"docker-compose.yaml",
+	"docker-compose.yml",
+}
 
-	for _, cn := range composeNames {
-		if name == cn {
-			return true
+// findComposeFile looks for a compose file in the given directory
+func findComposeFile(dir string) string {
+	for _, name := range composeFileNames {
+		path := filepath.Join(dir, name)
+		if _, err := os.Stat(path); err == nil {
+			return path
 		}
 	}
-	return false
+	return ""
 }
 
 // generateProjectID generates a stable ID from the project path
