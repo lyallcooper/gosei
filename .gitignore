@@ -29,6 +29,7 @@ vendor/
 Thumbs.db
 
 # Local configuration
+.env
 .env.local
 *.local
 

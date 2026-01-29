@@ -157,7 +157,8 @@ func (h *ProjectHandler) runComposeOperation(w http.ResponseWriter, r *http.Requ
 	go func() {
 		defer close(outputCh)
 
-		result, err := op(r.Context(), p.Path, outputCh)
+		// Use background context since this runs after the HTTP response is sent
+		result, err := op(context.Background(), p.Path, outputCh)
 
 		// Broadcast completion
 		success := err == nil && result != nil && result.Success
